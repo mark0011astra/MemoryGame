@@ -1,7 +1,7 @@
 # Memory Game
 
 This is a memory game built with Tkinter, where players are challenged to remember the sequence of highlighted cells. As the game progresses, the sequence becomes longer and more difficult to memorize.
-
+![alt text](image.png)
 ## Features
 
 - **Dynamic Difficulty:** The game's difficulty increases with each round by adding more cells to the sequence.

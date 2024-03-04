@@ -2,7 +2,7 @@ import tkinter as tk
 import random
 
 # ゲームの設定
-size = 2
+size = 3
 initial_display_time = 600  # 初期のマス表示時間（ミリ秒）
 flash_duration = 500         # 正解・不正解時のフラッシュの持続時間（ミリ秒）
 correct_flash_color = "yellow green"  # 正解時のフラッシュ色
