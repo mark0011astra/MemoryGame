@@ -139,13 +139,15 @@ Ensure Python 3 and Tkinter are installed. Run the script to start the game:
 python memory_game.py
 ```
 
+## memory_game.exe
+The exe version of memory?game.py is memory_game.exe, which can be run immediately in a Windows environment.
+
 ## Conclusion
 
 This Memory Game showcases the capabilities of Python's Tkinter library for creating simple yet engaging GUI applications. It demonstrates handling user input, updating the UI, and managing game state and logic.
 
+---------------------
 
-
-# メモリーゲーム
 
 このメモリーゲームはTkinterを使用して構築されており、プレイヤーはハイライトされたセルのシーケンスを記憶することに挑戦します。ゲームが進むにつれて、シーケンスはより長く、記憶するのがより難しくなります。
 
@@ -184,6 +186,7 @@ Python 3を使用してスクリプトを実行します。TkinterがPython環�
 ```bash
 python memory_game.py
 ```
+
 
 ## 貢献
 
@@ -271,10 +274,5 @@ python memory_game.py
 
 ゲームのGUIはTkinterを使用して作成され、セルのグリッド、スコア表示、およびゲームを開始、リセット、設定を調整するためのボタンを含むシンプルなレイアウトで構成されています。
 
-## ゲームの実行
-
-Python 3とTkinterがインストールされていることを確認します。スクリプトを実行してゲームを開始します：
-
-```bash
-python memory_game.py
-```
+## memory_game.exe
+memory?game.pyをexe化したものがmemory_game.exeです。Windows環境ですぐに実行できます。
