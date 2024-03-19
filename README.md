@@ -1,3 +1,4 @@
+[![CodeFactor](https://www.codefactor.io/repository/github/mark0011astra/memorygame/badge)](https://www.codefactor.io/repository/github/mark0011astra/memorygame)
 # Memory Game
 
 This is a memory game built with Tkinter, where players are challenged to remember the sequence of highlighted cells. As the game progresses, the sequence becomes longer and more difficult to memorize.
