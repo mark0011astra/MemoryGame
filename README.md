@@ -7,12 +7,11 @@ This is a memory game built with Tkinter, where players are challenged to rememb
 
 **The ultimate working memory enhancement software, maximizing efficiency through psychological, medical, academic, and mathematical perspectives.**
 
-[![Status](https://img.shields.io/badge/status-under_development-yellow)](https://github.com/yourusername/yourrepository)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Overview
 
-`Ultimate Working Memory Booster` is an application designed to effectively train your working memory. Based on principles from psychology, medicine, academic research, and mathematics, it aims to enhance your cognitive abilities. This software is more than just a game; it offers a scientific approach to unlock your brain's full potential.
+Application designed to effectively train your working memory. Based on principles from psychology, medicine, academic research, and mathematics, it aims to enhance your cognitive abilities. This software is more than just a game; it offers a scientific approach to unlock your brain's full potential.
 
 ## Key Features
 
