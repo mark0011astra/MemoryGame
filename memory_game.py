@@ -1,198 +1,220 @@
 import tkinter as tk
 import random
+import time
+from collections import deque
 
-# ゲームの設定
-size = 3
-initial_display_time = 600  # 初期のマス表示時間（ミリ秒）
-flash_duration = 500         # 正解・不正解時のフラッシュの持続時間（ミリ秒）
-correct_flash_color = "yellow green"  # 正解時のフラッシュ色
-incorrect_flash_color = "red"  # 不正解時のフラッシュ色
-start_round = 1              # ゲーム開始時のラウンド数
 
-# グローバル変数
-buttons = []
-active_sequence = []
-user_sequence = []
-score = 0
-high_score = 0
-game_active = False
-display_time = initial_display_time  # 現在のマス表示時間
-last_highlighted = None  # 最後に光ったマス
+class WorkingMemoryTrainer:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Ultimate Working Memory Booster")
 
-# マスを光らせる関数
-def highlight_cell(x, y):
-    buttons[x][y].config(bg="light gray")
+        # --- 設定 ---
+        self.grid_size = 3
+        self.initial_display_time = 800  # やや長めに設定
+        self.flash_duration = 300
+        self.correct_flash_color = "sea green"
+        self.incorrect_flash_color = "salmon"
+        self.start_round = 2  # 少し複雑な状態から開始
+        self.n_back_level = 2  # Dual N-Back の N
 
-# 全てのマスの色をリセットする関数
-def reset_cell_color():
-    for row in buttons:
-        for button in row:
-            button.config(bg="dark gray")
+        # --- 状態変数 ---
+        self.buttons = []
+        self.active_sequence = []
+        self.user_sequence = []
+        self.score = 0
+        self.high_score = 0
+        self.game_active = False
+        self.display_time = self.initial_display_time
+        self.last_highlighted = None
+        self.current_round = 0
+        self.start_time = 0
+        self.reaction_times = []
+        self.n_back_history = deque(maxlen=self.n_back_level)
 
-# ランダムなマスを取得する関数
-def get_random_cell():
-    global last_highlighted
-    while True:
-        cell = random.randint(0, size - 1), random.randint(0, size - 1)
-        if cell != last_highlighted:
-            last_highlighted = cell
-            return cell
+        # --- GUI要素 ---
+        self._setup_ui()
 
-# ユーザーのクリックを処理する関数
-def user_click(x, y):
-    global user_sequence, game_active
-    if not game_active:
-        return
-    user_sequence.append((x, y))
-    if user_sequence[-1] != active_sequence[len(user_sequence) - 1]:
-        update_score(success=False)
-        game_over()
-    elif len(user_sequence) == len(active_sequence):
-        check_sequence()
+    def _setup_ui(self):
+        # スコアフレーム
+        self.score_frame = tk.Frame(self.root, bg="white")
+        self.score_frame.grid(row=0, column=0, columnspan=self.grid_size, sticky="ew")
+        self.score_label = tk.Label(self.score_frame, text=f"Score: {self.score}", font=("Helvetica", 16))
+        self.score_label.pack(pady=10)
+        self.high_score_label = tk.Label(self.score_frame, text=f"High Score: {self.high_score}", font=("Helvetica", 16))
+        self.high_score_label.pack(pady=10)
 
-# シーケンスをチェックする関数
-def check_sequence():
-    global score, user_sequence, active_sequence, game_active, high_score
-    score = len(active_sequence)  # スコアを現在のラウンド数に更新
-    update_score(success=True)
-    if score > high_score:
-        high_score = score
-        high_score_label.config(text=f"High Score: {high_score}")
-    root.after(1000, new_round)
+        # ボタンの作成
+        for i in range(self.grid_size):
+            row = []
+            for j in range(self.grid_size):
+                button = tk.Button(self.root, bg="dark gray", width=8, height=4,
+                                   command=lambda x=i, y=j: self.user_click(x, y))
+                button.grid(row=i + 1, column=j, padx=5, pady=5)
+                row.append(button)
+            self.buttons.append(row)
 
-# スコアを更新する関数
-def update_score(success):
-    global score_frame
-    if success:
-        score_frame.config(bg=correct_flash_color)
-        root.after(flash_duration, lambda: score_frame.config(bg="white"))
-        score_label.config(text=f"Score: {score}", fg="green")
-    else:
-        score_label.config(text=f"Score: {score}", fg="red")
-        score_frame.config(bg=incorrect_flash_color)
-        root.after(flash_duration, lambda: score_frame.config(bg="white"))
+        # コントロールパネル
+        control_frame = tk.Frame(self.root)
+        control_frame.grid(row=self.grid_size + 1, column=0, columnspan=self.grid_size, pady=10)
 
-# ゲームオーバーの処理をする関数
-def game_over():
-    global game_active, active_sequence, user_sequence
-    game_active = False
-    start_button.config(state=tk.NORMAL)
-    reset_button.config(state=tk.DISABLED)
-    reset_cell_color()
-    active_sequence = []
-    user_sequence = []
+        self.start_button = tk.Button(control_frame, text="Start", command=self.start_game)
+        self.start_button.pack(side=tk.LEFT, padx=5)
 
-# ゲームを開始する関数
-def start_game():
-    global score, game_active, start_round, active_sequence
-    score = 0
-    update_score(success=True)
-    game_active = True
-    start_button.config(state=tk.DISABLED)
-    reset_button.config(state=tk.NORMAL)
-    active_sequence = [get_random_cell() for _ in range(start_round)]
-    show_sequence()
+        self.reset_button = tk.Button(control_frame, text="Reset", command=self.reset_game, state=tk.DISABLED)
+        self.reset_button.pack(side=tk.LEFT, padx=5)
 
-# 新しいラウンドを始める関数
-def new_round():
-    global user_sequence
-    if not game_active:
-        return
-    user_sequence = []
-    active_sequence.append(get_random_cell())
-    show_sequence()
+        self.time_label = tk.Label(control_frame, text=f"Display Time: {self.display_time / 1000:.2f}s")
+        self.time_label.pack(side=tk.LEFT, padx=5)
 
-# シーケンスを表示する関数
-def show_sequence():
-    reset_cell_color()
-    for i, (x, y) in enumerate(active_sequence):
-        root.after(display_time * i, lambda x=x, y=y: highlight_cell(x, y))
-        root.after(display_time * (i + 1), reset_cell_color)
+        tk.Button(control_frame, text="+", command=lambda: self.adjust_time(100)).pack(side=tk.LEFT, padx=2)
+        tk.Button(control_frame, text="-", command=lambda: self.adjust_time(-100)).pack(side=tk.LEFT, padx=2)
 
-# 表示時間を調整する関数
-def adjust_time(delta):
-    global display_time
-    new_time = display_time + delta
-    if 0 <= new_time <= 2000:
-        display_time = new_time
-    time_label.config(text=f"Display Time: {display_time / 1000}s")
+        # N-Back レベル調整
+        n_back_frame = tk.Frame(self.root)
+        n_back_frame.grid(row=self.grid_size + 2, column=0, columnspan=self.grid_size, pady=5)
+        tk.Label(n_back_frame, text="N-Back Level:").pack(side=tk.LEFT)
+        tk.Button(n_back_frame, text="-", command=self._decrease_n_back).pack(side=tk.LEFT)
+        self.n_back_label = tk.Label(n_back_frame, text=str(self.n_back_level))
+        self.n_back_label.pack(side=tk.LEFT)
+        tk.Button(n_back_frame, text="+", command=self._increase_n_back).pack(side=tk.LEFT)
 
-# 開始ラウンドを設定する関数
-def set_start_round():
-    global start_round
-    try:
-        round_value = int(start_round_entry.get())
-        if round_value > 0:
-            start_round = round_value
-            start_round_label.config(text=f"Start Round: {start_round}")
-    except ValueError:
-        pass
+        # フィードバックラベル
+        self.feedback_label = tk.Label(self.root, text="", font=("Helvetica", 14))
+        self.feedback_label.grid(row=self.grid_size + 3, column=0, columnspan=self.grid_size)
 
-# ゲームをリセットする関数
-def reset_game():
-    global game_active, active_sequence, user_sequence, score
-    game_active = False
-    start_button.config(state=tk.NORMAL)
-    reset_button.config(state=tk.DISABLED)
-    reset_cell_color()
-    active_sequence = []
-    user_sequence = []
-    score = 0
-    update_score(success=True)
+    # --- 心理学的アプローチ ---
+    def _apply_chunking(self, sequence):
+        # 長いシーケンスを3-4要素のチャンクに分割 (例)
+        chunk_size = random.randint(3, 4)
+        for i in range(0, len(sequence), chunk_size):
+            yield sequence[i:i + chunk_size]
 
-# GUIの設定
-root = tk.Tk()
-root.title("Memory Game")
+    # --- マスの操作 ---
+    def highlight_cell(self, x, y):
+        self.buttons[x][y].config(bg="light sky blue") # 視覚的な区別を明確に
 
-# スコアフレーム
-score_frame = tk.Frame(root, bg="white")
-score_frame.grid(row=0, column=0, columnspan=size, sticky="ew")
+    def reset_cell_color(self):
+        for row in self.buttons:
+            for button in row:
+                button.config(bg="dark gray")
 
-# スコアラベル
-score_label = tk.Label(score_frame, text=f"Score: {score}", font=("Helvetica", 16))
-score_label.pack(pady=10)
+    def get_random_cell(self):
+        while True:
+            cell = random.randint(0, self.grid_size - 1), random.randint(0, self.grid_size - 1)
+            if cell != self.last_highlighted:
+                self.last_highlighted = cell
+                return cell
 
-# ハイスコアラベル
-high_score_label = tk.Label(score_frame, text=f"High Score: {high_score}", font=("Helvetica", 16))
-high_score_label.pack(pady=10)
+    # --- ユーザーインタラクション ---
+    def user_click(self, x, y):
+        if not self.game_active:
+            return
 
-# ボタンの作成
-for i in range(size):
-    row = []
-    for j in range(size):
-        button = tk.Button(root, bg="dark gray", width=10, height=5, command=lambda x=i, y=j: user_click(x, y))
-        button.grid(row=i + 1, column=j)
-        row.append(button)
-    buttons.append(row)
+        timestamp = time.time()
+        self.reaction_times.append(timestamp - self.start_time)
 
-# スタートボタン
-start_button = tk.Button(root, text="Start", command=start_game)
-start_button.grid(row=size + 1, column=0, columnspan=size // 2)
+        self.user_sequence.append((x, y))
 
-# リセットボタン
-reset_button = tk.Button(root, text="Reset", command=reset_game, state=tk.DISABLED)
-reset_button.grid(row=size + 1, column=size // 2, columnspan=size // 2)
+        # Dual N-Back のチェック
+        if len(self.active_sequence) > self.n_back_level:
+            if self.user_sequence[-1] == self.active_sequence[-self.n_back_level]:
+                print("N-Back match!") # フィードバック
 
-# 表示時間ラベル
-time_label = tk.Label(root, text=f"Display Time: {display_time / 1000}s")
-time_label.grid(row=size + 2, column=0, columnspan=size)
+        if self.user_sequence[-1] != self.active_sequence[len(self.user_sequence) - 1]:
+            self.update_score(success=False)
+            self.feedback_label.config(text="Incorrect!", fg="red")
+            self.game_over()
+        elif len(self.user_sequence) == len(self.active_sequence):
+            self.check_sequence()
 
-# 時間調整ボタン
-time_up_button = tk.Button(root, text="+", command=lambda: adjust_time(100))
-time_up_button.grid(row=size + 3, column=0)
+    # --- シーケンスのチェック ---
+    def check_sequence(self):
+        self.score = self.current_round  # スコアを現在のラウンド数に
+        self.update_score(success=True)
+        self.feedback_label.config(text="Correct!", fg="green")
+        if self.score > self.high_score:
+            self.high_score = self.score
+            self.high_score_label.config(text=f"High Score: {self.high_score}")
+        self.root.after(1000, self.new_round)
 
-time_down_button = tk.Button(root, text="-", command=lambda: adjust_time(-100))
-time_down_button.grid(row=size + 3, column=1)
+    # --- スコアの更新 ---
+    def update_score(self, success):
+        if success:
+            self.score_frame.config(bg=self.correct_flash_color)
+            self.root.after(self.flash_duration, lambda: self.score_frame.config(bg="white"))
+            self.score_label.config(text=f"Score: {self.score}", fg="forest green")
+        else:
+            self.score_label.config(text=f"Score: {self.score}", fg="firebrick")
+            self.score_frame.config(bg=self.incorrect_flash_color)
+            self.root.after(self.flash_duration, lambda: self.score_frame.config(bg="white"))
 
-# 開始ラウンド設定エリア
-start_round_frame = tk.Frame(root)
-start_round_frame.grid(row=size + 4, column=0, columnspan=size)
-start_round_label = tk.Label(start_round_frame, text=f"Start Round: {start_round}")
-start_round_label.pack(side=tk.LEFT)
-start_round_entry = tk.Entry(start_round_frame, width=5)
-start_round_entry.pack(side=tk.LEFT)
-start_round_button = tk.Button(start_round_frame, text="Set", command=set_start_round)
-start_round_button.pack(side=tk.LEFT)
+    # --- ゲームフロー ---
+    def start_game(self):
+        self.score = 0
+        self.current_round = self.start_round
+        self.update_score(success=True)
+        self.game_active = True
+        self.start_button.config(state=tk.DISABLED)
+        self.reset_button.config(state=tk.NORMAL)
+        self.active_sequence = [self.get_random_cell() for _ in range(self.current_round)]
+        self.show_sequence()
 
-root.mainloop()
+    def game_over(self):
+        self.game_active = False
+        self.start_button.config(state=tk.NORMAL)
+        self.reset_button.config(state=tk.DISABLED)
+        self.reset_cell_color()
+        self.active_sequence = []
+        self.user_sequence = []
+        print("Game Over")
+        # パフォーマンス分析 (例)
+        if self.reaction_times:
+            avg_reaction_time = sum(self.reaction_times) / len(self.reaction_times)
+            print(f"Average reaction time: {avg_reaction_time:.3f} seconds")
 
+    def reset_game(self):
+        self.game_over()
+        self.score = 0
+        self.update_score(success=True)
+        self.feedback_label.config(text="")
+
+    def new_round(self):
+        if not self.game_active:
+            return
+        self.user_sequence = []
+        self.current_round += 1
+        self.active_sequence.append(self.get_random_cell())
+        self.show_sequence()
+
+    def show_sequence(self):
+        self.reset_cell_color()
+        self.start_time = time.time() # ラウンド開始時刻を記録
+        for i, cell in enumerate(self.active_sequence):
+            x, y = cell
+            self.root.after(int(self.display_time * i * 0.7), lambda x=x, y=y: self.highlight_cell(x, y)) # 少し早めに
+            self.root.after(int(self.display_time * (i + 1) * 0.7), self.reset_cell_color)
+
+    # --- 難易度調整 ---
+    def adjust_time(self, delta):
+        new_time = self.display_time + delta
+        if 100 <= new_time <= 2000:
+            self.display_time = new_time
+            self.time_label.config(text=f"Display Time: {self.display_time / 1000:.2f}s")
+
+    # --- Dual N-Back 関連 ---
+    def _increase_n_back(self):
+        self.n_back_level += 1
+        self.n_back_label.config(text=str(self.n_back_level))
+        self.n_back_history = deque(maxlen=self.n_back_level)
+
+    def _decrease_n_back(self):
+        if self.n_back_level > 1:
+            self.n_back_level -= 1
+            self.n_back_label.config(text=str(self.n_back_level))
+            self.n_back_history = deque(maxlen=self.n_back_level)
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    trainer = WorkingMemoryTrainer(root)
+    root.mainloop()
