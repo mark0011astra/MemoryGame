@@ -42,14 +42,6 @@ This software is grounded in the following scientific principles:
 
 ### How to Run
 
-```bash
-python main.py
----------------------
-
-
-## 概要
-
-`Ultimate Working Memory Booster` は、ワーキングメモリを効果的にトレーニングするために設計されたアプリケーションです。心理学、医学、学術研究、そして数学的原則に基づき、認知能力の向上を目指します。このソフトウェアは、単なるゲームではなく、脳の潜在能力を最大限に引き出すための科学的アプローチを提供します。
 
 ## 主な機能
 
