@@ -39,20 +39,6 @@ This software is grounded in the following scientific principles:
 *   Python 3.x
 *   Tkinter (GUI library included with standard Python)
 
-### Installation
-
-1. Clone this repository:
-    ```bash
-    git clone https://github.com/yourusername/yourrepository.git
-    ```
-2. Navigate to the directory:
-    ```bash
-    cd yourrepository
-    ```
-3. Install the required libraries (if there are any additional dependencies):
-    ```bash
-    pip install -r requirements.txt
-    ```
 
 ### How to Run
 
@@ -84,27 +70,7 @@ python main.py
 *   **デュアルタスク:**  複数の情報を同時に処理する能力を鍛えるために、視覚的および（以前は）聴覚的な要素を組み合わせます。
 *   **統計的学習:**  パフォーマンスデータを分析し、難易度調整に役立てます。
 
-## 始め方
 
-### 前提条件
-
-*   Python 3.x
-*   Tkinter (Pythonに標準で含まれるGUIライブラリ)
-
-### インストール
-
-1. このリポジトリをクローンします:
-    ```bash
-    git clone https://github.com/yourusername/yourrepository.git
-    ```
-2. ディレクトリに移動します:
-    ```bash
-    cd yourrepository
-    ```
-3. 必要なライブラリをインストールします (もし追加の依存関係がある場合):
-    ```bash
-    pip install -r requirements.txt
-    ```
 
 ### 実行方法
 
